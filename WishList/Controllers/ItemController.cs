@@ -23,18 +23,14 @@ namespace WishList.Controllers
 
         public IActionResult Index()
         {
-            var User = _userManager.GetUserAsync(HttpContext.User);
-            List<Item> model = new List<Item>();
-                model= _context.Items.Where(x=>x.Id==User.Id).ToList<Item>();
+            var user = _userManager.GetUserAsync(HttpContext.User).Result;
             
-            if (model!=null && model.Count()==1)
-            {
+                var model= _context.Items.Where(x=>x.User.Id==user.Id).ToList();
+            
+            
+            
                 return View("Index", model);
-            }
-            else
-            {
-                return View("Index", model);
-            }
+            
            
         }
 
@@ -46,10 +42,10 @@ namespace WishList.Controllers
         }
 
         [HttpPost]
-        public IActionResult Create(Models.Item item)
+        public IActionResult Create(Item item)
         {
-            var user = this._userManager.GetUserAsync(HttpContext.User);
-            
+            var user = this._userManager.GetUserAsync(HttpContext.User).Result;
+            item.User=user;
             _context.Items.Add(item);            
             _context.SaveChanges();
             return RedirectToAction("Index");
@@ -57,12 +53,17 @@ namespace WishList.Controllers
 
         public IActionResult Delete(int id)
         {
-            var user = _userManager.GetUserAsync(HttpContext.User);
-            if(user.Id==id) {
+            var user = _userManager.GetUserAsync(HttpContext.User).Result;
+            
                 var item = _context.Items.FirstOrDefault(e => e.Id == id);
+                if(item.user!=user) {
+                return Unauthorized();
+                }
+                else{
                 _context.Items.Remove(item);
                 _context.SaveChanges();
                 return RedirectToAction("Index");
+                }
             }
             else
             {
